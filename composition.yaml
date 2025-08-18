@@ -6,13 +6,13 @@ kind: Composition
 metadata:
   name: dnsrecord
   labels:
-    crossplane.io/xrd: xdnsrecords.platform.io
+    crossplane.io/xrd: dnsrecords.platform.io
   annotations:
     crossplane.io/version: "v2.0"
 spec:
   compositeTypeRef:
     apiVersion: platform.io/v1alpha1
-    kind: XDNSRecord
+    kind: DNSRecord
   mode: Pipeline
   pipeline:
     # Step 1: Load composition environment for DNS zone configuration
@@ -74,7 +74,7 @@ spec:
         inline:
           template: |
             apiVersion: platform.io/v1alpha1
-            kind: XDNSRecord
+            kind: DNSRecord
             status:
               fqdn: {{ .observed.composite.resource.spec.name }}.{{ index .context "apiextensions.crossplane.io/environment" "zone" }}
 

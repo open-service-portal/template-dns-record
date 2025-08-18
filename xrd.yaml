@@ -4,16 +4,16 @@
 apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
-  name: xdnsrecords.platform.io
+  name: dnsrecords.platform.io
   annotations:
     crossplane.io/version: "v2.0"
 spec:
   scope: Namespaced  # XRs can be created directly in namespaces
   group: platform.io
   names:
-    kind: XDNSRecord
-    plural: xdnsrecords
-  # No claimNames section - developers create XDNSRecord directly
+    kind: DNSRecord
+    plural: dnsrecords
+  # No claimNames section - developers create DNSRecord directly
   defaultCompositionRef:
     name: dnsrecord
   versions:

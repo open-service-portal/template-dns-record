@@ -1,8 +1,9 @@
 ---
-# Example: Creating XDNSRecord directly (Crossplane v2 namespaced XRs)
+# Example: Creating DNSRecord directly (Crossplane v2 namespaced XRs)
+# No claims needed - this is the XR itself!
 
 apiVersion: platform.io/v1alpha1
-kind: XDNSRecord
+kind: DNSRecord
 metadata:
   name: my-app-dns
   namespace: default  # XRs are now namespaced
@@ -19,7 +20,7 @@ spec:
 ---
 # Another example with CNAME in a different namespace
 apiVersion: platform.io/v1alpha1
-kind: XDNSRecord
+kind: DNSRecord
 metadata:
   name: api-dns
   namespace: development
@@ -31,7 +32,7 @@ spec:
 ---
 # Example for production namespace
 apiVersion: platform.io/v1alpha1
-kind: XDNSRecord
+kind: DNSRecord
 metadata:
   name: production-dns
   namespace: production
@@ -43,7 +44,7 @@ spec:
 ---
 # Example with composition selector
 apiVersion: platform.io/v1alpha1
-kind: XDNSRecord
+kind: DNSRecord
 metadata:
   name: advanced-dns
   namespace: staging

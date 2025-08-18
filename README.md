@@ -5,7 +5,7 @@ Advanced Crossplane v2 template for managing DNS records using namespaced XRs.
 ## Overview
 
 This template provides DNS record management using Crossplane v2's latest features including:
-- **Namespaced XRs** - Developers create XDNSRecord directly (no claims needed!)
+- **Namespaced XRs** - Developers create DNSRecord XRs directly (no separate claims needed!)
 - **Go Templating** for flexible resource creation
 - **Environment Configs** for shared DNS zone configuration  
 - **Direct Kubernetes resource creation** without provider-kubernetes
@@ -16,7 +16,7 @@ This template provides DNS record management using Crossplane v2's latest featur
 - `xrd.yaml` - Composite Resource Definition (XRD) with namespaced scope
 - `composition.yaml` - Composition using Pipeline mode with Go templating
 - `rbac.yaml` - RBAC permissions for Crossplane to create ConfigMaps
-- `examples/xr.yaml` - Example XDNSRecord resources (direct creation, no claims)
+- `examples/xr.yaml` - Example DNSRecord resources (direct creation, no claims)
 
 ## Requirements
 
@@ -60,11 +60,11 @@ kubectl apply -f composition.yaml
 
 ### 5. Create a DNS Record
 ```bash
-# Apply XDNSRecord
+# Apply DNSRecord
 kubectl apply -f examples/xr.yaml
 
 # Check the status
-kubectl get xdnsrecords -A
+kubectl get dnsrecords -A
 kubectl describe xdnsrecord my-app-dns -n default
 ```
 
@@ -72,11 +72,11 @@ kubectl describe xdnsrecord my-app-dns -n default
 
 ### Creating a DNS Record (Namespaced XR)
 
-With Crossplane v2, developers create XDNSRecord resources directly in their namespaces:
+With Crossplane v2, developers create DNSRecord resources directly in their namespaces:
 
 ```yaml
 apiVersion: platform.io/v1alpha1
-kind: XDNSRecord
+kind: DNSRecord
 metadata:
   name: my-app
   namespace: default 
@@ -87,7 +87,7 @@ spec:
   ttl: 3600
 ```
 
-**Key Difference**: No separate claim resource needed! The XDNSRecord is created directly.
+**Key Difference**: No separate claim resource needed! The DNSRecord is created directly.
 
 ### Supported Record Types
 - **A** - IPv4 address
@@ -106,7 +106,7 @@ kubectl get xdnsrecord my-app -n default -o jsonpath='{.status.fqdn}'
 
 ## How It Works
 
-1. **XR Creation**: Developer creates XDNSRecord directly in their namespace
+1. **XR Creation**: Developer creates DNSRecord directly in their namespace
 2. **Environment Loading**: Composition loads DNS zone from EnvironmentConfig
 3. **Resource Creation**: Go template creates a ConfigMap in the same namespace
 4. **Status Update**: FQDN is computed and returned in status
@@ -118,7 +118,7 @@ Using our restaurant analogy from the documentation:
 - **XRD (xrd.yaml)** = The Menu - Shows what DNS records you can order
 - **Composition** = The Recipe - How to create the DNS record
 - **Environment Config** = The Kitchen Settings - Shared configuration (DNS zone)
-- **XDNSRecord** = The Direct Order - Developers order directly (v2 style, no waiter/claim needed!)
+- **DNSRecord** = The Direct Order - Developers order directly (v2 style, no waiter/claim needed!)
 - **Functions** = The Kitchen Equipment - Tools for complex preparation
 - **RBAC** = Kitchen Access - Who can use what equipment
 - **Namespace** = The Table - Where your order is delivered
@@ -174,9 +174,9 @@ kubectl logs -n crossplane-system deployment/crossplane -f | grep environment
 ### DNS Record Not Creating
 ```bash
 # Check XRD status
-kubectl get xrd xdnsrecords.platform.io
+kubectl get xrd dnsrecords.platform.io
 
-# Check XDNSRecord resources
+# Check DNSRecord resources
 kubectl get xdnsrecord -A
 
 # Check created ConfigMap
