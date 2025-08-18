@@ -5,15 +5,16 @@ This directory contains examples of how to use the DNSRecord Crossplane resource
 ## Available Examples
 
 ### Basic Records
-- `a-record.yaml` - Simple A record pointing to an IP address
-- `cname-record.yaml` - CNAME record pointing to another domain
-- `txt-record.yaml` - TXT record for domain verification
+- `a-record.yaml` - Simple A record for application endpoints (includes local/production values)
+- `cname-record.yaml` - CNAME alias records with practical use cases
+- `txt-record.yaml` - TXT records for domain verification, SPF, DMARC
+- `wildcard-record.yaml` - Wildcard DNS for dynamic subdomains
 
 ### Environment-Specific
-- `production-example.yaml` - Example for production namespace with lower TTL
+- `production-example.yaml` - Production best practices with proper TTL, annotations, and namespace isolation
 
 ### Advanced Usage
-- `advanced-composition.yaml` - Using composition selectors and references
+- `advanced-composition.yaml` - Composition selection, provider configuration, and management policies
 
 ## Usage
 

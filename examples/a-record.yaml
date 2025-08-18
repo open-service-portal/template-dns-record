@@ -1,6 +1,21 @@
 ---
-# Example: Simple A Record
-# Creates a DNS A record pointing to an IP address
+# Example: Simple A Record for Application Endpoint
+# 
+# PURPOSE:
+#   Create a DNS A record that points a subdomain to an IP address.
+#   This is the most common DNS record type for web applications.
+#
+# USE CASE:
+#   - Pointing app.example.com to your application's load balancer IP
+#   - Creating subdomain entries for microservices
+#   - Setting up development/staging environment URLs
+#
+# LOCAL TESTING:
+#   Use with local IPs (127.0.0.1, 192.168.x.x) and test with /etc/hosts
+#
+# RACKSPACE PRODUCTION:
+#   Point to your LoadBalancer external IP (e.g., 50.56.157.82)
+#
 apiVersion: platform.io/v1alpha1
 kind: DNSRecord
 metadata:
@@ -9,5 +24,7 @@ metadata:
 spec:
   type: A
   name: my-app
-  value: "192.168.1.100"
-  ttl: 3600
+  # For local: use 127.0.0.1 or your local network IP
+  # For Rackspace: use your LoadBalancer IP from 'kubectl get svc -n ingress-nginx'
+  value: "127.0.0.1"  # Change to your actual IP
+  ttl: 300  # 5 minutes - good for testing, use 3600 for production

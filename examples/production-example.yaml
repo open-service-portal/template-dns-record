@@ -1,13 +1,50 @@
 ---
-# Example: Production DNS Record
-# Shows how to create a DNS record in a production namespace
+# Example: Production-Ready DNS Configuration
+#
+# PURPOSE:
+#   Demonstrate production best practices for DNS records including
+#   proper TTL settings, namespace isolation, and high-availability setup.
+#
+# USE CASE:
+#   - Production application deployment
+#   - Blue-green deployment DNS switching
+#   - Multi-region load balancing
+#   - Disaster recovery failover
+#
+# PRODUCTION BEST PRACTICES:
+#   1. Use production namespace for isolation
+#   2. Set appropriate TTL (300 for frequent updates, 3600 for stable)
+#   3. Point to load balancer IPs, not individual pods
+#   4. Consider using multiple A records for redundancy
+#   5. Document the record purpose in metadata annotations
+#
+# LOCAL TESTING:
+#   Test blue-green switching with different local IPs
+#   Simulate failover by changing the IP value
+#
+# RACKSPACE PRODUCTION:
+#   Point to your production LoadBalancer IP
+#   Current Rackspace LB: 50.56.157.82 (from ingress-nginx)
+#
 apiVersion: platform.io/v1alpha1
 kind: DNSRecord
 metadata:
   name: production-app-dns
-  namespace: production
+  namespace: production  # Isolated namespace for production resources
+  annotations:
+    description: "Main production application endpoint"
+    owner: "platform-team"
+    criticality: "high"
+    # For change tracking
+    last-updated: "2024-01-15"
+    updated-by: "devops-team"
 spec:
   type: A
-  name: production-app
-  value: "10.0.0.50"
-  ttl: 300  # Lower TTL for easier updates
+  name: app  # Becomes app.openportal.dev in production
+  # Production LoadBalancer IP
+  # Local: 127.0.0.1
+  # Rackspace: 50.56.157.82 (or your actual LB IP)
+  value: "50.56.157.82"
+  ttl: 300  # 5 minutes - allows quick DNS propagation for updates
+            # Use 60 for blue-green deployments
+            # Use 3600 for stable production endpoints
