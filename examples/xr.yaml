@@ -1,0 +1,59 @@
+---
+# Example: Creating XDNSRecord directly (Crossplane v2 namespaced XRs)
+
+apiVersion: platform.io/v1alpha1
+kind: XDNSRecord
+metadata:
+  name: my-app-dns
+  namespace: default  # XRs are now namespaced
+spec:
+  type: A
+  name: my-app
+  value: "192.168.1.100"
+  ttl: 3600
+  # Optional: specify composition explicitly
+  # crossplane:
+  #   compositionRef:
+  #     name: dnsrecord
+
+---
+# Another example with CNAME in a different namespace
+apiVersion: platform.io/v1alpha1
+kind: XDNSRecord
+metadata:
+  name: api-dns
+  namespace: development
+spec:
+  type: CNAME
+  name: api
+  value: "backend.example.com"
+
+---
+# Example for production namespace
+apiVersion: platform.io/v1alpha1
+kind: XDNSRecord
+metadata:
+  name: production-dns
+  namespace: production
+spec:
+  type: A
+  name: production-app
+  value: "10.0.0.50"
+
+---
+# Example with composition selector
+apiVersion: platform.io/v1alpha1
+kind: XDNSRecord
+metadata:
+  name: advanced-dns
+  namespace: staging
+spec:
+  type: TXT
+  name: verification
+  value: "site-verification=abc123"
+  ttl: 7200
+  # Select a specific composition using labels
+  crossplane:
+    compositionSelector:
+      matchLabels:
+        provider: cloudflare  # if you have multiple compositions

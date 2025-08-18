@@ -1,5 +1,6 @@
 ---
 # Composition using Go Templating and Environment Configs
+# Works with namespaced XRs (Crossplane v2)
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
@@ -42,11 +43,12 @@ spec:
             kind: ConfigMap
             metadata:
               name: dns-{{ .observed.composite.resource.metadata.name }}
-              namespace: {{ .observed.composite.resource.spec.claimRef.namespace | default "default" }}
+              # Namespaced XRs: use the XR's namespace directly
+              namespace: {{ .observed.composite.resource.metadata.namespace }}
               labels:
                 app.kubernetes.io/managed-by: crossplane
-                crossplane.io/claim-name: {{ .observed.composite.resource.spec.claimRef.name | default .observed.composite.resource.metadata.name }}
-                crossplane.io/claim-namespace: {{ .observed.composite.resource.spec.claimRef.namespace | default "default" }}
+                crossplane.io/xr-name: {{ .observed.composite.resource.metadata.name }}
+                crossplane.io/xr-namespace: {{ .observed.composite.resource.metadata.namespace }}
               annotations:
                 gotemplating.fn.crossplane.io/composition-resource-name: dns-configmap
                 # Mark as ready since ConfigMaps don't have status

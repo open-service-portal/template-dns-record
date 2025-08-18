@@ -1,19 +1,19 @@
 ---
 # Composite Resource Definition (XRD)
-apiVersion: apiextensions.crossplane.io/v1
+# Using Crossplane v2 with namespaced XRs (no claims needed)
+apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
   name: xdnsrecords.platform.io
   annotations:
     crossplane.io/version: "v2.0"
 spec:
+  scope: Namespaced  # XRs can be created directly in namespaces
   group: platform.io
   names:
     kind: XDNSRecord
     plural: xdnsrecords
-  claimNames:
-    kind: DNSRecord
-    plural: dnsrecords
+  # No claimNames section - developers create XDNSRecord directly
   defaultCompositionRef:
     name: dnsrecord
   versions:
@@ -59,14 +59,26 @@ spec:
                   default: 300
                   minimum: 60
                   maximum: 86400
-                compositionSelector:
+                # Crossplane v2 machinery under spec.crossplane
+                crossplane:
                   type: object
-                  description: "Select which composition to use"
+                  description: "Crossplane-specific configuration"
                   properties:
-                    matchLabels:
+                    compositionRef:
                       type: object
-                      additionalProperties:
-                        type: string
+                      description: "Reference to the composition to use"
+                      properties:
+                        name:
+                          type: string
+                          description: "Name of the composition"
+                    compositionSelector:
+                      type: object
+                      description: "Select which composition to use"
+                      properties:
+                        matchLabels:
+                          type: object
+                          additionalProperties:
+                            type: string
             # Status field for returning computed values
             status:
               type: object
