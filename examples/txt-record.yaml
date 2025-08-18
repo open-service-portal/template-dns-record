@@ -1,0 +1,42 @@
+---
+# Example: TXT Record for Domain Verification & Configuration
+#
+# PURPOSE:
+#   Create a DNS TXT record to store text-based information.
+#   Used for domain verification, security policies, and configuration.
+#
+# USE CASE:
+#   - Google/Microsoft domain verification (_domainkey, google-site-verification)
+#   - SPF records for email authentication (v=spf1 include:_spf.google.com ~all)
+#   - DMARC policies for email security (_dmarc.example.com)
+#   - Domain ownership verification for SSL certificates
+#   - Service discovery metadata
+#   - Let's Encrypt DNS challenge (_acme-challenge.example.com)
+#
+# LOCAL TESTING:
+#   Use for testing DNS-01 challenges or mock verifications
+#   Verify with: dig TXT verification.local @127.0.0.1
+#
+# RACKSPACE PRODUCTION:
+#   Real verification codes from Google, Microsoft, etc.
+#   SPF/DKIM/DMARC records for email authentication
+#
+# FORMAT NOTES:
+#   - Max 255 characters per string (use multiple strings for longer values)
+#   - Quotes are usually required in the value
+#   - Some providers require escaping special characters
+#
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: verification-dns
+  namespace: staging
+spec:
+  type: TXT
+  name: _verification  # Often prefixed with underscore for special records
+  # Common examples:
+  # Google: "google-site-verification=rXOxyZounnXasA8Z7oaD3c14JdjS9aKSWvsR1EbUSIQ"
+  # SPF: "v=spf1 include:_spf.google.com ~all"
+  # DMARC: "v=DMARC1; p=none; rua=mailto:dmarc@example.com"
+  value: "verification=example-token-for-testing"
+  ttl: 300  # 5 minutes for testing, use 7200 (2 hours) for production

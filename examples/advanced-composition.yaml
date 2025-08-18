@@ -1,0 +1,68 @@
+---
+# Example: Advanced Crossplane Features - Composition Selection
+#
+# PURPOSE:
+#   Demonstrate advanced Crossplane features like composition selection,
+#   provider configuration, and resource management policies.
+#
+# USE CASE:
+#   - Multi-provider DNS management (Route53, Cloudflare, Azure DNS)
+#   - Environment-specific compositions (dev vs prod)
+#   - Provider-specific features (geo-routing, health checks)
+#   - Testing different DNS implementations
+#
+# ADVANCED FEATURES:
+#   1. Composition Selection - Choose specific implementation
+#   2. Provider Config - Select which account/credentials to use
+#   3. Management Policies - Control Crossplane's resource handling
+#   4. Resource References - Link to other Crossplane resources
+#
+# LOCAL TESTING:
+#   Test with different composition selections
+#   Mock multiple providers with different behaviors
+#
+# RACKSPACE PRODUCTION:
+#   Select production-grade compositions with monitoring
+#   Use specific provider configurations for different accounts
+#
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: advanced-dns
+  namespace: default
+  annotations:
+    # Crossplane-specific annotations
+    crossplane.io/external-name: "advanced-app.openportal.dev"
+    crossplane.io/paused: "false"  # Set to "true" to pause reconciliation
+spec:
+  type: A
+  name: advanced-app
+  # Using localhost for universal testing
+  # Change to actual IP for production
+  value: "127.0.0.1"
+  ttl: 3600
+  
+  # Advanced Crossplane configuration
+  crossplane:
+    # Option 1: Reference a specific composition by name
+    compositionRef:
+      name: dnsrecord  # Default composition
+    
+    # Option 2: Select composition by labels (commented out)
+    # Useful when you have multiple compositions for different scenarios
+    # compositionSelector:
+    #   matchLabels:
+    #     provider: cloudflare     # For Cloudflare-specific features
+    #     environment: production  # For production-grade settings
+    #     region: us-east-1       # For region-specific routing
+    
+    # Management policies (Crossplane 1.14+)
+    # managementPolicies:
+    #   - Observe  # Only watch, don't create/update/delete
+    #   - Create   # Allow creation
+    #   - Update   # Allow updates
+    #   - Delete   # Allow deletion
+    
+    # Provider configuration reference
+    # providerConfigRef:
+    #   name: production-aws  # Use specific AWS account/role

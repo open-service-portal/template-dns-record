@@ -1,0 +1,53 @@
+---
+# Example: Wildcard DNS Record for Dynamic Subdomains
+#
+# PURPOSE:
+#   Create a wildcard DNS record that matches all subdomains under a domain.
+#   Useful for dynamic environments and multi-tenant applications.
+#
+# USE CASE:
+#   - Multi-tenant SaaS apps (*.customers.example.com)
+#   - Dynamic preview environments (pr-123.preview.example.com)
+#   - Development environments (*.dev.example.com)
+#   - Catch-all for undefined subdomains
+#   - Kubernetes ingress with dynamic routing
+#
+# HOW IT WORKS:
+#   The wildcard (*) matches any subdomain that doesn't have an explicit record.
+#   For example, *.app.com matches:
+#   - user1.app.com
+#   - user2.app.com
+#   - anything.app.com
+#   But NOT app.com itself or sub.sub.app.com
+#
+# LOCAL TESTING:
+#   Create wildcard for *.local pointing to 127.0.0.1
+#   Test with: curl -H "Host: anything.local" http://localhost
+#
+# RACKSPACE PRODUCTION:
+#   Point to your ingress controller that handles dynamic routing
+#   The ingress controller will route based on Host headers
+#
+# KUBERNETES INTEGRATION:
+#   Works perfectly with Kubernetes Ingress patterns:
+#   - Single wildcard DNS → Ingress Controller
+#   - Ingress rules handle specific routing
+#   - No need for individual DNS records per service
+#
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: wildcard-dns
+  namespace: default
+  annotations:
+    description: "Wildcard for all development subdomains"
+    use-case: "Dynamic preview environments"
+spec:
+  type: A
+  name: "*.preview"  # Becomes *.preview.openportal.dev
+  # Point to your ingress controller
+  # Local: 127.0.0.1
+  # Rackspace: Your LoadBalancer IP
+  value: "127.0.0.1"  # Same IP handles all subdomains
+  ttl: 60  # 1 minute - very short for dynamic environments
+           # This allows quick updates when preview envs change

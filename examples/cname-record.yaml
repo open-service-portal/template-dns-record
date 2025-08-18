@@ -1,0 +1,36 @@
+---
+# Example: CNAME Record for Service Aliases
+#
+# PURPOSE:
+#   Create a DNS CNAME (Canonical Name) record that creates an alias
+#   pointing one domain name to another domain name.
+#
+# USE CASE:
+#   - Creating www.example.com → example.com redirects
+#   - Pointing api.myapp.com → backend-service.amazonaws.com
+#   - Setting up CDN aliases (app.example.com → d123.cloudfront.net)
+#   - Multi-region failover (eu.app.com → eu-west-1.elb.amazonaws.com)
+#
+# LOCAL TESTING:
+#   Point to localhost.localdomain or your local service names
+#   Test with: curl -H "Host: api.local" http://localhost
+#
+# RACKSPACE PRODUCTION:
+#   Point to your actual service endpoints or load balancer DNS names
+#   Example: ingress-nginx.rackspace.com
+#
+# NOTE: CNAME records cannot be used for root domains (example.com),
+#       only for subdomains (www.example.com, api.example.com)
+#
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: api-dns
+  namespace: development  # Can be created in any namespace
+spec:
+  type: CNAME
+  name: api  # This becomes api.yourdomain.com
+  # For local: use localhost or service.namespace.svc.cluster.local
+  # For Rackspace: use your actual backend endpoint
+  value: "backend.svc.cluster.local"  # Kubernetes internal DNS
+  # Note: TTL is often ignored for CNAME records by some DNS providers
