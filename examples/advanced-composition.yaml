@@ -1,0 +1,21 @@
+---
+# Example: Advanced - Using Composition Selectors
+# Shows how to select a specific composition when multiple exist
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: advanced-dns
+  namespace: default
+spec:
+  type: A
+  name: advanced-app
+  value: "192.168.1.200"
+  ttl: 3600
+  # Optional: specify composition explicitly
+  crossplane:
+    compositionRef:
+      name: dnsrecord
+    # Or select a composition using labels
+    # compositionSelector:
+    #   matchLabels:
+    #     provider: cloudflare  # if you have multiple compositions

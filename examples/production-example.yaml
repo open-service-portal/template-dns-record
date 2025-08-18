@@ -1,0 +1,13 @@
+---
+# Example: Production DNS Record
+# Shows how to create a DNS record in a production namespace
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: production-app-dns
+  namespace: production
+spec:
+  type: A
+  name: production-app
+  value: "10.0.0.50"
+  ttl: 300  # Lower TTL for easier updates

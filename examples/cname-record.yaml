@@ -1,0 +1,12 @@
+---
+# Example: CNAME Record
+# Creates a DNS CNAME record pointing to another domain
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: api-dns
+  namespace: development  # Can be created in any namespace
+spec:
+  type: CNAME
+  name: api
+  value: "backend.example.com"

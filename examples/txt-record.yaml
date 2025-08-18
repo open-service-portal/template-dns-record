@@ -1,0 +1,13 @@
+---
+# Example: TXT Record
+# Creates a DNS TXT record for domain verification
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: verification-dns
+  namespace: staging
+spec:
+  type: TXT
+  name: verification
+  value: "site-verification=abc123"
+  ttl: 7200

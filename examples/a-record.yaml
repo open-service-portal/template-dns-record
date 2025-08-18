@@ -1,0 +1,13 @@
+---
+# Example: Simple A Record
+# Creates a DNS A record pointing to an IP address
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: my-app-dns
+  namespace: default  # XRs are now namespaced in Crossplane v2
+spec:
+  type: A
+  name: my-app
+  value: "192.168.1.100"
+  ttl: 3600
