@@ -1,13 +1,37 @@
+---
 # Example DNS Record Claim
 # This shows how developers would use the DNS Record template
 apiVersion: platform.io/v1alpha1
 kind: DNSRecord
 metadata:
-  name: example-dns-record
+  name: my-app-dns
   namespace: default
 spec:
-  parameters:
-    name: app.example.com
-    type: A
-    value: 192.168.1.100
-    ttl: 3600
+  type: A
+  name: my-app
+  value: "192.168.1.100"
+  ttl: 3600
+  
+---
+# Another example with CNAME
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: api-dns
+  namespace: default
+spec:
+  type: CNAME
+  name: api
+  value: "backend.example.com"
+  
+---
+# Example for production namespace
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: production-dns
+  namespace: production
+spec:
+  type: A
+  name: production-app
+  value: "10.0.0.50"

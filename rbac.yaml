@@ -1,0 +1,52 @@
+---
+# Grant Crossplane permission to create and manage ConfigMaps
+# This is required for direct Kubernetes resource creation without provider-kubernetes
+# https://docs.crossplane.io/latest/concepts/rbac/#composed-resources
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crossplane-dns-configmaps
+  labels:
+    rbac.crossplane.io/aggregate-to-crossplane: "true"
+    app.kubernetes.io/component: crossplane
+    app.kubernetes.io/part-of: dns-template
+rules:
+# Allow Crossplane to manage ConfigMaps
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+# Allow reading namespaces for namespace-scoped resources
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+
+---
+# Alternative: Grant all permissions (use with caution)
+# Uncomment if you need Crossplane to manage all resource types
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: crossplane-allow-all
+#   labels:
+#     rbac.crossplane.io/aggregate-to-crossplane: "true"
+# rules:
+# - apiGroups:
+#   - "*"
+#   resources:
+#   - "*"
+#   verbs:
+#   - "*"

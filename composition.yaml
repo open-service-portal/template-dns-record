@@ -1,50 +1,82 @@
+---
+# Composition using Go Templating and Environment Configs
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: xdnsrecord-kubernetes
+  name: dnsrecord
   labels:
-    provider: kubernetes
-    type: development
+    crossplane.io/xrd: xdnsrecords.platform.io
+  annotations:
+    crossplane.io/version: "v2.0"
 spec:
   compositeTypeRef:
     apiVersion: platform.io/v1alpha1
     kind: XDNSRecord
-  resources:
-  - name: dns-configmap
-    base:
-      apiVersion: v1
-      kind: ConfigMap
-      metadata:
-        name: dns-record
-        namespace: default
-      data:
-        # Default values, will be patched
-        name: ""
-        type: ""
-        value: ""
-        ttl: "300"
-    patches:
-    - type: FromCompositeFieldPath
-      fromFieldPath: spec.parameters.name
-      toFieldPath: data.name
-    - type: FromCompositeFieldPath
-      fromFieldPath: spec.parameters.type
-      toFieldPath: data.type
-    - type: FromCompositeFieldPath
-      fromFieldPath: spec.parameters.value
-      toFieldPath: data.value
-    - type: FromCompositeFieldPath
-      fromFieldPath: spec.parameters.ttl
-      toFieldPath: data.ttl
-      transforms:
-      - type: string
-        string:
-          type: Convert
-          convert: ToJson
-    - type: FromCompositeFieldPath
-      fromFieldPath: metadata.name
-      toFieldPath: metadata.name
-      transforms:
-      - type: string
-        string:
-          fmt: "dns-record-%s"
+  mode: Pipeline
+  pipeline:
+    # Step 1: Load composition environment for DNS zone configuration
+    # https://docs.crossplane.io/latest/concepts/environment-configs/
+    - step: load-composition-environment
+      functionRef:
+        name: function-environment-configs
+      input:
+        apiVersion: environmentconfigs.fn.crossplane.io/v1beta1
+        kind: Input
+        spec:
+          environmentConfigs:
+          - type: Reference
+            ref:
+              name: dns-config
+
+    # Step 2: Create ConfigMap to store DNS record values
+    - step: store-dns-record
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: dns-{{ .observed.composite.resource.metadata.name }}
+              namespace: {{ .observed.composite.resource.spec.claimRef.namespace | default "default" }}
+              labels:
+                app.kubernetes.io/managed-by: crossplane
+                crossplane.io/claim-name: {{ .observed.composite.resource.spec.claimRef.name | default .observed.composite.resource.metadata.name }}
+                crossplane.io/claim-namespace: {{ .observed.composite.resource.spec.claimRef.namespace | default "default" }}
+              annotations:
+                gotemplating.fn.crossplane.io/composition-resource-name: dns-configmap
+                # Mark as ready since ConfigMaps don't have status
+                gotemplating.fn.crossplane.io/ready: "True"
+            data:
+              type: "{{ .observed.composite.resource.spec.type }}"
+              name: "{{ .observed.composite.resource.spec.name }}"
+              value: "{{ .observed.composite.resource.spec.value }}"
+              ttl: "{{ .observed.composite.resource.spec.ttl | default 300 }}"
+              fqdn: "{{ .observed.composite.resource.spec.name }}.{{ index .context "apiextensions.crossplane.io/environment" "zone" }}"
+              # Additional metadata
+              created-by: "crossplane-dns-template"
+              managed-by: "platform-team"
+
+    # Step 3: Update composite resource status with FQDN
+    - step: update-status
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            apiVersion: platform.io/v1alpha1
+            kind: XDNSRecord
+            status:
+              fqdn: {{ .observed.composite.resource.spec.name }}.{{ index .context "apiextensions.crossplane.io/environment" "zone" }}
+
+    # Step 4: Automatically mark composite as ready
+    - step: auto-ready
+      functionRef:
+        name: function-auto-ready

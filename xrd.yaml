@@ -1,7 +1,11 @@
+---
+# Composite Resource Definition (XRD)
 apiVersion: apiextensions.crossplane.io/v1
 kind: CompositeResourceDefinition
 metadata:
   name: xdnsrecords.platform.io
+  annotations:
+    crossplane.io/version: "v2.0"
 spec:
   group: platform.io
   names:
@@ -10,42 +14,80 @@ spec:
   claimNames:
     kind: DNSRecord
     plural: dnsrecords
+  defaultCompositionRef:
+    name: dnsrecord
   versions:
-  - name: v1alpha1
-    served: true
-    referenceable: true
-    schema:
-      openAPIV3Schema:
-        type: object
-        properties:
-          spec:
-            type: object
-            properties:
-              parameters:
-                type: object
-                properties:
-                  name:
-                    type: string
-                    description: "DNS record name (e.g., example.com)"
-                  type:
-                    type: string
-                    description: "Record type (A, AAAA, CNAME, MX, TXT)"
-                    enum:
-                      - A
-                      - AAAA
-                      - CNAME
-                      - MX
-                      - TXT
-                  value:
-                    type: string
-                    description: "Record value (IP address, hostname, or text)"
-                  ttl:
-                    type: integer
-                    description: "Time to live in seconds"
-                    default: 300
-                required:
-                - name
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
                 - type
+                - name
                 - value
-            required:
-            - parameters
+              properties:
+                type:
+                  type: string
+                  description: "DNS record type"
+                  enum:
+                    - A
+                    - AAAA
+                    - CNAME
+                    - TXT
+                  example: "A"
+                name:
+                  type: string
+                  description: "DNS record name (subdomain)"
+                  minLength: 1
+                  maxLength: 63
+                  example: my-app
+                  pattern: '^[a-z]([-a-z0-9]*[a-z0-9])?(\.[a-z]([-a-z0-9]*[a-z0-9])?)*$'
+                value:
+                  type: string
+                  description: "DNS record value (IP address, hostname, or text)"
+                  example: "192.168.1.100"
+                ttl:
+                  type: integer
+                  description: "Time to live in seconds"
+                  default: 300
+                  minimum: 60
+                  maximum: 86400
+                compositionSelector:
+                  type: object
+                  description: "Select which composition to use"
+                  properties:
+                    matchLabels:
+                      type: object
+                      additionalProperties:
+                        type: string
+            # Status field for returning computed values
+            status:
+              type: object
+              properties:
+                fqdn:
+                  type: string
+                  description: "Fully qualified domain name"
+                  example: "my-app.portal.example.com"
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
