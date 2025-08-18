@@ -1,0 +1,51 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xdnsrecords.platform.io
+spec:
+  group: platform.io
+  names:
+    kind: XDNSRecord
+    plural: xdnsrecords
+  claimNames:
+    kind: DNSRecord
+    plural: dnsrecords
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              parameters:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: "DNS record name (e.g., example.com)"
+                  type:
+                    type: string
+                    description: "Record type (A, AAAA, CNAME, MX, TXT)"
+                    enum:
+                      - A
+                      - AAAA
+                      - CNAME
+                      - MX
+                      - TXT
+                  value:
+                    type: string
+                    description: "Record value (IP address, hostname, or text)"
+                  ttl:
+                    type: integer
+                    description: "Time to live in seconds"
+                    default: 300
+                required:
+                - name
+                - type
+                - value
+            required:
+            - parameters

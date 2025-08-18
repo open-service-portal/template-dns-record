@@ -1,0 +1,50 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xdnsrecord-kubernetes
+  labels:
+    provider: kubernetes
+    type: development
+spec:
+  compositeTypeRef:
+    apiVersion: platform.io/v1alpha1
+    kind: XDNSRecord
+  resources:
+  - name: dns-configmap
+    base:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: dns-record
+        namespace: default
+      data:
+        # Default values, will be patched
+        name: ""
+        type: ""
+        value: ""
+        ttl: "300"
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.name
+      toFieldPath: data.name
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.type
+      toFieldPath: data.type
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.value
+      toFieldPath: data.value
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.ttl
+      toFieldPath: data.ttl
+      transforms:
+      - type: string
+        string:
+          type: Convert
+          convert: ToJson
+    - type: FromCompositeFieldPath
+      fromFieldPath: metadata.name
+      toFieldPath: metadata.name
+      transforms:
+      - type: string
+        string:
+          fmt: "dns-record-%s"

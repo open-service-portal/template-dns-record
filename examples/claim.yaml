@@ -1,0 +1,13 @@
+# Example DNS Record Claim
+# This shows how developers would use the DNS Record template
+apiVersion: platform.io/v1alpha1
+kind: DNSRecord
+metadata:
+  name: example-dns-record
+  namespace: default
+spec:
+  parameters:
+    name: app.example.com
+    type: A
+    value: 192.168.1.100
+    ttl: 3600
