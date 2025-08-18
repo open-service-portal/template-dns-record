@@ -1,10 +1,11 @@
 # DNS Record Template
 
-Advanced Crossplane v2 template for managing DNS records in Kubernetes.
+Advanced Crossplane v2 template for managing DNS records using namespaced XRs.
 
 ## Overview
 
-This template provides DNS record management using Crossplane v2's advanced features including:
+This template provides DNS record management using Crossplane v2's latest features including:
+- **Namespaced XRs** - Developers create DNSRecord XRs directly (no separate claims needed!)
 - **Go Templating** for flexible resource creation
 - **Environment Configs** for shared DNS zone configuration  
 - **Direct Kubernetes resource creation** without provider-kubernetes
@@ -12,11 +13,10 @@ This template provides DNS record management using Crossplane v2's advanced feat
 
 ## Contents
 
-- `xrd.yaml` - Composite Resource Definition (XRD) that defines the DNS record API
+- `xrd.yaml` - Composite Resource Definition (XRD) with namespaced scope
 - `composition.yaml` - Composition using Pipeline mode with Go templating
-- `environmentconfig.yaml` - DNS zone configuration shared across all records
 - `rbac.yaml` - RBAC permissions for Crossplane to create ConfigMaps
-- `examples/` - Example claims showing how to use this template
+- `examples/xr.yaml` - Example DNSRecord resources (direct creation, no claims)
 
 ## Requirements
 
@@ -40,47 +40,54 @@ Crossplane v2 requires composition functions for Pipeline mode (installed by set
 kubectl apply -f rbac.yaml
 ```
 
-### 3. Create Environment Config
+### 2. Verify Environment Config
 ```bash
-# Configure the DNS zone for your platform
-kubectl apply -f environmentconfig.yaml
+# dns-config should be installed by setup-cluster.sh
+kubectl get environmentconfig dns-config
+
+# If missing, run the setup script or create manually
 ```
 
-### 4. Install the XRD
+### 3. Install the XRD
 ```bash
 kubectl apply -f xrd.yaml
 ```
 
-### 5. Install the Composition
+### 4. Install the Composition
 ```bash
 kubectl apply -f composition.yaml
 ```
 
-### 6. Create a DNS Record
+### 5. Create a DNS Record
 ```bash
-kubectl apply -f examples/claim.yaml
+# Apply DNSRecord
+kubectl apply -f examples/xr.yaml
 
 # Check the status
-kubectl get dnsrecords
-kubectl describe dnsrecord my-app-dns
+kubectl get dnsrecords -A
+kubectl describe xdnsrecord my-app-dns -n default
 ```
 
 ## Usage
 
-### Creating a DNS Record
+### Creating a DNS Record (Namespaced XR)
+
+With Crossplane v2, developers create DNSRecord resources directly in their namespaces:
 
 ```yaml
 apiVersion: platform.io/v1alpha1
 kind: DNSRecord
 metadata:
   name: my-app
-  namespace: default
+  namespace: default 
 spec:
   type: A
   name: my-app
   value: "192.168.1.100"
   ttl: 3600
 ```
+
+**Key Difference**: No separate claim resource needed! The DNSRecord is created directly.
 
 ### Supported Record Types
 - **A** - IPv4 address
@@ -93,32 +100,17 @@ spec:
 The composition automatically computes and returns the FQDN in the status:
 
 ```bash
-kubectl get dnsrecord my-app -o jsonpath='{.status.fqdn}'
+kubectl get xdnsrecord my-app -n default -o jsonpath='{.status.fqdn}'
 # Output: my-app.portal.example.com
 ```
 
 ## How It Works
 
-1. **Claim Creation**: Developer creates a DNSRecord claim
+1. **XR Creation**: Developer creates DNSRecord directly in their namespace
 2. **Environment Loading**: Composition loads DNS zone from EnvironmentConfig
-3. **Resource Creation**: Go template creates a ConfigMap with DNS data
+3. **Resource Creation**: Go template creates a ConfigMap in the same namespace
 4. **Status Update**: FQDN is computed and returned in status
 5. **Ready State**: Auto-ready function marks the resource as ready
-
-## Crossplane v2 Features Used
-
-### Advanced Features
-1. **Pipeline Mode Composition** - Sequential processing with functions
-2. **Go Templating** - Flexible resource generation with logic
-3. **Environment Configs** - Shared configuration across resources
-4. **Direct Resource Creation** - No provider needed for Kubernetes resources
-5. **Status Patching** - Return computed values to users
-
-### Standard Features
-1. **Default Composition Reference** - XRD specifies default composition
-2. **Composition Selector** - Claims can choose different compositions
-3. **Validation** - Schema validation with patterns and constraints
-4. **Version Annotations** - Clear version tracking
 
 ## Restaurant Analogy
 
@@ -126,27 +118,25 @@ Using our restaurant analogy from the documentation:
 - **XRD (xrd.yaml)** = The Menu - Shows what DNS records you can order
 - **Composition** = The Recipe - How to create the DNS record
 - **Environment Config** = The Kitchen Settings - Shared configuration (DNS zone)
-- **Claim** = The Order - What the developer requests
+- **DNSRecord** = The Direct Order - Developers order directly (v2 style, no waiter/claim needed!)
 - **Functions** = The Kitchen Equipment - Tools for complex preparation
 - **RBAC** = Kitchen Access - Who can use what equipment
+- **Namespace** = The Table - Where your order is delivered
 
 ## Customization
 
 ### Changing the DNS Zone
-Edit `environmentconfig.yaml`:
-```yaml
-data:
-  zone: your-domain.com  # Change this to your DNS zone
+Edit the platform environment config:
+```bash
+# Edit the dns-config EnvironmentConfig
+kubectl edit environmentconfig dns-config
+
+# Or update via the platform setup:
+# scripts/cluster-manifests/environment-configs.yaml
 ```
 
 ### Adding More Record Types
 Update the XRD to include additional DNS record types in the enum.
-
-### Using Different Storage
-Instead of ConfigMap, you could modify the Go template to create:
-- Secrets (for sensitive DNS data)
-- Custom Resources (if you have a DNS operator)
-- External API calls (using webhook functions)
 
 ## Troubleshooting
 
@@ -171,8 +161,11 @@ kubectl auth can-i create configmaps --as=system:serviceaccount:crossplane-syste
 
 ### Environment Config Not Loading
 ```bash
-# Check environment config exists
+# Check environment config exists (installed by setup-cluster.sh)
 kubectl get environmentconfig dns-config
+
+# View the config
+kubectl describe environmentconfig dns-config
 
 # Check composition pipeline logs
 kubectl logs -n crossplane-system deployment/crossplane -f | grep environment
@@ -181,13 +174,16 @@ kubectl logs -n crossplane-system deployment/crossplane -f | grep environment
 ### DNS Record Not Creating
 ```bash
 # Check XRD status
-kubectl describe xdnsrecord
+kubectl get xrd dnsrecords.platform.io
+
+# Check DNSRecord resources
+kubectl get xdnsrecord -A
 
 # Check created ConfigMap
 kubectl get configmap -A | grep dns
 
-# View claim events
-kubectl describe dnsrecord my-app-dns
+# View XR events
+kubectl describe xdnsrecord my-app-dns -n default
 ```
 
 ## Links and Resources

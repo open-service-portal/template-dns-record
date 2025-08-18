@@ -1,17 +1,18 @@
 ---
 # Composition using Go Templating and Environment Configs
+# Works with namespaced XRs (Crossplane v2)
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
   name: dnsrecord
   labels:
-    crossplane.io/xrd: xdnsrecords.platform.io
+    crossplane.io/xrd: dnsrecords.platform.io
   annotations:
     crossplane.io/version: "v2.0"
 spec:
   compositeTypeRef:
     apiVersion: platform.io/v1alpha1
-    kind: XDNSRecord
+    kind: DNSRecord
   mode: Pipeline
   pipeline:
     # Step 1: Load composition environment for DNS zone configuration
@@ -42,11 +43,12 @@ spec:
             kind: ConfigMap
             metadata:
               name: dns-{{ .observed.composite.resource.metadata.name }}
-              namespace: {{ .observed.composite.resource.spec.claimRef.namespace | default "default" }}
+              # Namespaced XRs: use the XR's namespace directly
+              namespace: {{ .observed.composite.resource.metadata.namespace }}
               labels:
                 app.kubernetes.io/managed-by: crossplane
-                crossplane.io/claim-name: {{ .observed.composite.resource.spec.claimRef.name | default .observed.composite.resource.metadata.name }}
-                crossplane.io/claim-namespace: {{ .observed.composite.resource.spec.claimRef.namespace | default "default" }}
+                crossplane.io/xr-name: {{ .observed.composite.resource.metadata.name }}
+                crossplane.io/xr-namespace: {{ .observed.composite.resource.metadata.namespace }}
               annotations:
                 gotemplating.fn.crossplane.io/composition-resource-name: dns-configmap
                 # Mark as ready since ConfigMaps don't have status
@@ -72,7 +74,7 @@ spec:
         inline:
           template: |
             apiVersion: platform.io/v1alpha1
-            kind: XDNSRecord
+            kind: DNSRecord
             status:
               fqdn: {{ .observed.composite.resource.spec.name }}.{{ index .context "apiextensions.crossplane.io/environment" "zone" }}
 
