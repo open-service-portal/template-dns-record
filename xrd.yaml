@@ -5,6 +5,8 @@ apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
   name: dnsrecords.platform.io
+  labels:
+    terasky.backstage.io/generate-form: "true"
   annotations:
     crossplane.io/version: "v2.0"
 spec:
