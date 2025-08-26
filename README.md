@@ -20,6 +20,7 @@ This template provides DNS record management using Crossplane v2's latest featur
 - `configuration/composition.yaml` - Composition using Pipeline mode with Go templating
 - `rbac.yaml` - RBAC permissions for Crossplane to create ConfigMaps
 - `examples/` - Example DNSRecord resources (direct creation, no claims)
+- `.github/workflows/release.yaml` - Automated package building and publishing
 
 ## Requirements
 
@@ -39,13 +40,18 @@ Crossplane v2 requires composition functions for Pipeline mode (installed by set
 
 Grant Crossplane permission to create ConfigMaps
 
-### 1. Apply RBAC Permissions
 ```bash
-# Grant Crossplane permission to create ConfigMaps
 kubectl apply -f rbac.yaml
 ```
 
 ## Installation
+
+### Option 1: Configuration Package (Recommended)
+
+Install via the catalog:
+```bash
+kubectl apply -f https://github.com/open-service-portal/catalog/raw/main/templates/template-dns-record.yaml
+```
 
 Install directly:
 ```bash
@@ -209,6 +215,22 @@ kubectl describe xdnsrecord my-app-dns -n default
 ```
 
 ## Development
+
+### Building the Configuration Package
+
+Packages are automatically built and published when you create a Git tag:
+
+```bash
+# Tag a new version
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+The GitHub Actions workflow will:
+1. Build the Configuration package
+2. Push to GitHub Container Registry
+3. Create a GitHub release
+4. Generate a catalog entry
 
 ### Manual Build (for testing)
 
