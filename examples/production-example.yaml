@@ -26,7 +26,7 @@
 #   Point to your production LoadBalancer IP
 #   Current Rackspace LB: 50.56.157.82 (from ingress-nginx)
 #
-apiVersion: platform.io/v1alpha1
+apiVersion: openportal.dev/v1alpha1
 kind: DNSRecord
 metadata:
   name: production-app-dns
