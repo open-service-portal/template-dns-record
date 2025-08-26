@@ -56,7 +56,8 @@ jobs:
           # Install latest Crossplane CLI
           curl -sL https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh | sh
           sudo mv crossplane /usr/local/bin/
-          crossplane --version
+          # Ignore missing Crossplane server
+          crossplane version 2>/dev/null || true
       
       - name: Determine version
         id: version
