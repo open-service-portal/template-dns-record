@@ -4,14 +4,14 @@
 apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
-  name: dnsrecords.platform.io
+  name: dnsrecords.openportal.dev
   labels:
     terasky.backstage.io/generate-form: "true"
   annotations:
     crossplane.io/version: "v2.0"
 spec:
   scope: Namespaced  # XRs can be created directly in namespaces
-  group: platform.io
+  group: openportal.dev
   names:
     kind: DNSRecord
     plural: dnsrecords

@@ -6,12 +6,12 @@ kind: Composition
 metadata:
   name: dnsrecord
   labels:
-    crossplane.io/xrd: dnsrecords.platform.io
+    crossplane.io/xrd: dnsrecords.openportal.dev
   annotations:
     crossplane.io/version: "v2.0"
 spec:
   compositeTypeRef:
-    apiVersion: platform.io/v1alpha1
+    apiVersion: openportal.dev/v1alpha1
     kind: DNSRecord
   mode: Pipeline
   pipeline:
@@ -73,7 +73,7 @@ spec:
         source: Inline
         inline:
           template: |
-            apiVersion: platform.io/v1alpha1
+            apiVersion: openportal.dev/v1alpha1
             kind: DNSRecord
             status:
               fqdn: {{ .observed.composite.resource.spec.name }}.{{ index .context "apiextensions.crossplane.io/environment" "zone" }}

@@ -25,7 +25,7 @@
 #   Select production-grade compositions with monitoring
 #   Use specific provider configurations for different accounts
 #
-apiVersion: platform.io/v1alpha1
+apiVersion: openportal.dev/v1alpha1
 kind: DNSRecord
 metadata:
   name: advanced-dns

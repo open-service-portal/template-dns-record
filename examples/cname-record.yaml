@@ -22,7 +22,7 @@
 # NOTE: CNAME records cannot be used for root domains (example.com),
 #       only for subdomains (www.example.com, api.example.com)
 #
-apiVersion: platform.io/v1alpha1
+apiVersion: openportal.dev/v1alpha1
 kind: DNSRecord
 metadata:
   name: api-dns
