@@ -72,8 +72,6 @@ jobs:
 
       - name: Build Configuration package
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-
           # Add version to package metadata
           yq -i '.metadata.annotations."openportal.dev/version" = env(VERSION)' configuration/crossplane.yaml
 
@@ -81,6 +79,8 @@ jobs:
           crossplane xpkg build \
             --package-root=configuration/ \
             --package-file=configuration-dns-record.xpkg
+        env:
+          VERSION: ${{ steps.version.outputs.VERSION }}
       
       - name: Push package to registry
         run: |
