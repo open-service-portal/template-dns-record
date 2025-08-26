@@ -2,6 +2,8 @@
 
 Advanced Crossplane v2 template for managing DNS records using namespaced XRs.
 
+Available as a Crossplane Configuration package for easy installation and version management.
+
 ## Overview
 
 This template provides DNS record management using Crossplane v2's latest features including:
@@ -13,10 +15,12 @@ This template provides DNS record management using Crossplane v2's latest featur
 
 ## Contents
 
-- `xrd.yaml` - Composite Resource Definition (XRD) with namespaced scope
-- `composition.yaml` - Composition using Pipeline mode with Go templating
+- `configuration/crossplane.yaml` - Configuration package metadata
+- `configuration/xrd.yaml` - Composite Resource Definition (XRD) with namespaced scope
+- `configuration/composition.yaml` - Composition using Pipeline mode with Go templating
 - `rbac.yaml` - RBAC permissions for Crossplane to create ConfigMaps
-- `examples/xr.yaml` - Example DNSRecord resources (direct creation, no claims)
+- `examples/` - Example DNSRecord resources (direct creation, no claims)
+- `.github/workflows/release.yaml` - Automated package building and publishing
 
 ## Requirements
 
@@ -32,15 +36,39 @@ Crossplane v2 requires composition functions for Pipeline mode (installed by set
 - function-auto-ready
 - function-patch-and-transform
 
-## Setup Instructions
+### Permissions
 
-### 1. Apply RBAC Permissions
+Grant Crossplane permission to create ConfigMaps
+
 ```bash
-# Grant Crossplane permission to create ConfigMaps
 kubectl apply -f rbac.yaml
 ```
 
-### 2. Verify Environment Config
+## Installation
+
+### Option 1: Configuration Package (Recommended)
+
+Install via the catalog:
+```bash
+kubectl apply -f https://github.com/open-service-portal/catalog/raw/main/templates/template-dns-record.yaml
+```
+
+Install directly:
+```bash
+kubectl apply -f - <<EOF
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: configuration-dns-record
+  namespace: crossplane-system
+spec:
+  package: ghcr.io/open-service-portal/configuration-dns-record:v1.0.0
+EOF
+```
+
+### Option 2: Manual Installation
+
+#### 1. Verify Environment Config
 ```bash
 # dns-config should be installed by setup-cluster.sh
 kubectl get environmentconfig dns-config
@@ -48,17 +76,17 @@ kubectl get environmentconfig dns-config
 # If missing, run the setup script or create manually
 ```
 
-### 3. Install the XRD
+#### 2. Install the XRD
 ```bash
-kubectl apply -f xrd.yaml
+kubectl apply -f configuration/xrd.yaml
 ```
 
-### 4. Install the Composition
+#### 3. Install the Composition
 ```bash
-kubectl apply -f composition.yaml
+kubectl apply -f configuration/composition.yaml
 ```
 
-### 5. Create a DNS Record
+#### 4. Create a DNS Record
 ```bash
 # Apply DNSRecord
 kubectl apply -f examples/xr.yaml
@@ -186,9 +214,59 @@ kubectl get configmap -A | grep dns
 kubectl describe xdnsrecord my-app-dns -n default
 ```
 
+## Development
+
+### Building the Configuration Package
+
+Packages are automatically built and published when you create a Git tag:
+
+```bash
+# Tag a new version
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+The GitHub Actions workflow will:
+1. Build the Configuration package
+2. Push to GitHub Container Registry
+3. Create a GitHub release
+4. Generate a catalog entry
+
+### Manual Build (for testing)
+
+```bash
+# Install Crossplane CLI
+curl -sL https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh | sh
+
+# Build the package
+crossplane xpkg build --package-root=configuration/ --package-file=dns-record.xpkg
+
+# Push to registry (requires authentication)
+crossplane xpkg push --package-files=dns-record.xpkg ghcr.io/open-service-portal/configuration-dns-record:test
+```
+
+### Package Management
+
+```bash
+# Check package status
+kubectl get configuration configuration-dns-record -n crossplane-system
+
+# View revisions
+kubectl get configurationrevisions -n crossplane-system
+
+# Update to new version
+kubectl patch configuration configuration-dns-record -n crossplane-system \
+  --type='json' -p='[{"op": "replace", "path": "/spec/package", "value":"ghcr.io/open-service-portal/configuration-dns-record:v1.1.0"}]'
+
+# Remove package
+kubectl delete configuration configuration-dns-record -n crossplane-system
+```
+
 ## Links and Resources
 
+- [Package Registry](https://github.com/orgs/open-service-portal/packages/container/package/configuration-dns-record)
 - [Crossplane v2 Documentation](https://docs.crossplane.io/latest/)
+- [Configuration Packages](https://docs.crossplane.io/latest/packages/configurations/)
 - [Go Templating Function](https://github.com/crossplane-contrib/function-go-templating)
 - [Environment Configs](https://docs.crossplane.io/latest/concepts/environment-configs/)
 - [Composition Functions](https://docs.crossplane.io/latest/concepts/composition-functions/)

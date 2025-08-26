@@ -3,7 +3,7 @@ kind: Kustomization
 
 # Only include the Crossplane resources, not the examples
 resources:
-  - xrd.yaml
-  - composition.yaml
+  - configuration/xrd.yaml
+  - configuration/composition.yaml
   - rbac.yaml
 # Note: examples/xr.yaml is intentionally NOT included
