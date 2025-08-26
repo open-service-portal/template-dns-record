@@ -27,9 +27,8 @@ jobs:
     runs-on: ubuntu-latest
     
     permissions:
-      contents: read
-      packages: write
-      id-token: write  # For signing with cosign
+      contents: write # For creating releases
+      packages: write # For pushing to GitHub Container Registry
     
     steps:
       - name: Checkout repository
@@ -146,7 +145,7 @@ jobs:
       
       - name: Create GitHub Release
         if: github.event_name == 'push'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: Configuration DNS Record ${{ steps.version.outputs.VERSION }}
           body: |
