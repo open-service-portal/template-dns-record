@@ -193,7 +193,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: open-service-portal/catalog
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CATALOG_UPDATE }}
           path: catalog
 
       # TODO: Create a custom action with necessary inputs and use it here
@@ -226,4 +226,4 @@ jobs:
             --base main \
             --head update-dns-record-${VERSION}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CATALOG_UPDATE }}
