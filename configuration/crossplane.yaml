@@ -18,21 +18,18 @@ spec:
   # Minimum Crossplane version required
   crossplane:
     version: ">=v2.0.0"
-  
   # Dependencies on providers
   # Note: These are optional - users can install their own provider versions
-  dependsOn:    
+  dependsOn:
     # Required composition functions
     - apiVersion: pkg.crossplane.io/v1beta1
       kind: Function
       package: xpkg.crossplane.io/crossplane-contrib/crossplane-contrib/function-environment-configs
       version: ">=v0.1.0"
-    
     - apiVersion: pkg.crossplane.io/v1beta1
       kind: Function
       package: xpkg.crossplane.io/crossplane-contrib/crossplane-contrib/function-go-templating
       version: ">=v0.3.0"
-    
     - apiVersion: pkg.crossplane.io/v1beta1
       kind: Function
       package: xpkg.crossplane.io/crossplane-contrib/crossplane-contrib/function-auto-ready

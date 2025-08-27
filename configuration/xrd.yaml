@@ -7,11 +7,10 @@ metadata:
   name: dnsrecords.openportal.dev
   labels:
     terasky.backstage.io/generate-form: "true"
-    openportal.dev/version: "v0.0.1"
   annotations:
     crossplane.io/version: "v2.0"
 spec:
-  scope: Namespaced  # XRs can be created directly in namespaces
+  scope: Namespaced # XRs can be created directly in namespaces
   group: openportal.dev
   names:
     kind: DNSRecord
