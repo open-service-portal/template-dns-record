@@ -9,6 +9,7 @@ metadata:
     terasky.backstage.io/generate-form: "true"
   annotations:
     crossplane.io/version: "v2.0"
+    backstage.io/source-location: "url:https://github.com/open-service-portal/template-dns-record"
 spec:
   scope: Namespaced # XRs can be created directly in namespaces
   group: openportal.dev
