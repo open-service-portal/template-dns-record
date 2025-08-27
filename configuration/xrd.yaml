@@ -17,9 +17,6 @@ spec:
   names:
     kind: DNSRecord
     plural: dnsrecords
-  # No claimNames section - developers create DNSRecord directly
-  defaultCompositionRef:
-    name: dnsrecord
   versions:
     - name: v1alpha1
       served: true
@@ -63,26 +60,6 @@ spec:
                   default: 300
                   minimum: 60
                   maximum: 86400
-                # Crossplane v2 machinery under spec.crossplane
-                crossplane:
-                  type: object
-                  description: "Crossplane-specific configuration"
-                  properties:
-                    compositionRef:
-                      type: object
-                      description: "Reference to the composition to use"
-                      properties:
-                        name:
-                          type: string
-                          description: "Name of the composition"
-                    compositionSelector:
-                      type: object
-                      description: "Select which composition to use"
-                      properties:
-                        matchLabels:
-                          type: object
-                          additionalProperties:
-                            type: string
             # Status field for returning computed values
             status:
               type: object
