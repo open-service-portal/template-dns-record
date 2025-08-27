@@ -10,6 +10,7 @@ metadata:
   annotations:
     crossplane.io/version: "v2.0"
     backstage.io/source-location: "url:https://github.com/open-service-portal/template-dns-record"
+    openportal.dev/tags: "template-dns-record,dns,mock"
 spec:
   scope: Namespaced # XRs can be created directly in namespaces
   group: openportal.dev
