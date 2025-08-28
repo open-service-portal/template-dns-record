@@ -7,11 +7,10 @@ metadata:
   name: dnsrecords.openportal.dev
   labels:
     terasky.backstage.io/generate-form: "true"
-    openportal.dev/tag-dns: "true"
-    openportal.dev/tag-mock: "true"
   annotations:
     crossplane.io/version: "v2.0"
     backstage.io/source-location: "url:https://github.com/open-service-portal/template-dns-record"
+    openportal.dev/tags: "dns,mock"
 spec:
   scope: Namespaced # XRs can be created directly in namespaces
   group: openportal.dev
