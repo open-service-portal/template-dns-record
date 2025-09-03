@@ -7,6 +7,8 @@ metadata:
   name: dnsrecords.openportal.dev
   labels:
     terasky.backstage.io/generate-form: "true"
+    openportal.dev/version: "dev"  # CI/CD will replace with actual version
+    terasky.backstage.io/version: "v1.0.4"  # Legacy, kept for compatibility
   annotations:
     crossplane.io/version: "v2.0"
     backstage.io/source-location: "url:https://github.com/open-service-portal/template-dns-record"

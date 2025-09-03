@@ -85,8 +85,7 @@ jobs:
         run: |
           echo "Building version: ${VERSION}"
 
-          # Add version to package metadata
-          yq -i '.metadata.labels."openportal.dev/version" = env(VERSION)' configuration/crossplane.yaml
+          # Add version label to XRD only (crossplane.yaml has multi-line strings that yq corrupts)
           yq -i '.metadata.labels."openportal.dev/version" = env(VERSION)' configuration/xrd.yaml
 
           # Build the .xpkg file
