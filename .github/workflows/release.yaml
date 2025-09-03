@@ -51,7 +51,7 @@ jobs:
 
     env:
       VERSION: ${{ needs.vars.outputs.version }}
-      PKG_PATH: ${{ needs.vars.outputs.registry }}/${{ needs.vars.outputs.organisation }}/${{ needs.vars.outputs.name }}
+      PKG_PATH: ${{ needs.vars.outputs.registry }}/${{ needs.vars.outputs.organisation }}/configuration-dns-record
 
     steps:
       - name: Checkout repository
@@ -91,19 +91,19 @@ jobs:
           # Build the .xpkg file
           crossplane xpkg build \
             --package-root=configuration/ \
-            --package-file=${{ needs.vars.outputs.name }}.xpkg
+            --package-file=configuration-dns-record.xpkg
 
       - name: Push package to registry
         run: |
           # Push with version tag
           crossplane xpkg push \
-            --package-files=${{ needs.vars.outputs.name }}.xpkg \
+            --package-files=configuration-dns-record.xpkg \
             ${{ env.PKG_PATH }}:${VERSION}
           
           # Also push as 'latest' if this is not a pre-release
           if [[ ! "${VERSION}" =~ - ]]; then
             crossplane xpkg push \
-              --package-files=${{ needs.vars.outputs.name }}.xpkg \
+              --package-files=configuration-dns-record.xpkg \
               ${{ env.PKG_PATH }}:latest
           fi
 
@@ -131,7 +131,7 @@ jobs:
 
     env:
       VERSION: ${{ needs.vars.outputs.version }}
-      PKG_PATH: ${{ needs.vars.outputs.registry }}/${{ needs.vars.outputs.organisation }}/${{ needs.vars.outputs.name }}
+      PKG_PATH: ${{ needs.vars.outputs.registry }}/${{ needs.vars.outputs.organisation }}/configuration-dns-record
     
     steps:
       - name: Checkout repository
