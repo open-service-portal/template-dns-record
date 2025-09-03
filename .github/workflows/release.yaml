@@ -1,4 +1,3 @@
----
 # GitHub Actions workflow to build and publish Crossplane Configuration packages
 name: Release Configuration Package
 
@@ -7,49 +6,73 @@ on:
   push:
     tags:
       - 'v*.*.*'  # Semantic version tags (e.g., v1.0.0, v2.1.3)
-  
+
   # Allow manual trigger for testing
   workflow_dispatch:
     inputs:
       version:
         description: 'Version tag to use (e.g., v1.0.0)'
         required: true
-        default: 'v1.0.0'
-
-env:
-  # Use GitHub Container Registry (ghcr.io) for the Open Service Portal organization
-  REGISTRY: ghcr.io
-  PACKAGE_NAME: open-service-portal/configuration-dns-record
+        default: 'v0.0.0-pre'
 
 jobs:
-  build-and-push:
+  vars:
+    name: Gather environment information
+    runs-on: ubuntu-latest
+
+    # Job outputs allow to pass values to reusable workflows
+    outputs:
+      registry: ${{ steps.set-vars.outputs.registry }}
+      organisation: ${{ steps.set-vars.outputs.organisation }}
+      name: ${{ steps.set-vars.outputs.name }}
+      version: ${{ steps.set-vars.outputs.version }}
+    
+    steps:
+      - id: set-vars
+        run: |
+          echo "registry=ghcr.io" >> $GITHUB_OUTPUT
+          echo "organisation=${{ github.repository_owner }}" >> $GITHUB_OUTPUT
+          echo "name=${{ github.event.repository.name }}" >> $GITHUB_OUTPUT
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+  build:
     name: Build and Push Configuration Package
     runs-on: ubuntu-latest
-    
+    needs: vars
+
     permissions:
-      contents: write # For creating releases
       packages: write # For pushing to GitHub Container Registry
-    
+
+    env:
+      VERSION: ${{ needs.vars.outputs.version }}
+      PKG_PATH: ${{ needs.vars.outputs.registry }}/${{ needs.vars.outputs.organisation }}/${{ needs.vars.outputs.name }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           # Fetch all history for all tags and branches
           fetch-depth: 0
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
           # Enable multi-platform builds
           platforms: linux/amd64,linux/arm64
-      
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ needs.vars.outputs.registry }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Install Crossplane CLI
         run: |
           # Install latest Crossplane CLI
@@ -57,20 +80,11 @@ jobs:
           sudo mv crossplane /usr/local/bin/
           # Ignore missing Crossplane server
           crossplane version 2>/dev/null || true
-      
-      - name: Determine version
-        id: version
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${{ github.ref_name }}"
-          fi
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Building version: ${VERSION}"
 
       - name: Build Configuration package
         run: |
+          echo "Building version: ${VERSION}"
+
           # Add version to package metadata
           yq -i '.metadata.labels."openportal.dev/version" = env(VERSION)' configuration/crossplane.yaml
           yq -i '.metadata.labels."openportal.dev/version" = env(VERSION)' configuration/xrd.yaml
@@ -78,83 +92,62 @@ jobs:
           # Build the .xpkg file
           crossplane xpkg build \
             --package-root=configuration/ \
-            --package-file=configuration-dns-record.xpkg
-        env:
-          VERSION: ${{ steps.version.outputs.VERSION }}
-      
+            --package-file=${{ needs.vars.outputs.name }}.xpkg
+
       - name: Push package to registry
         run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          
           # Push with version tag
           crossplane xpkg push \
-            --package-files=configuration-dns-record.xpkg \
-            ${{ env.REGISTRY }}/${{ env.PACKAGE_NAME }}:${VERSION}
+            --package-files=${{ needs.vars.outputs.name }}.xpkg \
+            ${{ env.PKG_PATH }}:${VERSION}
           
           # Also push as 'latest' if this is not a pre-release
-          if [[ ! "${VERSION}" =~ -(alpha|beta|rc) ]]; then
+          if [[ ! "${VERSION}" =~ - ]]; then
             crossplane xpkg push \
-              --package-files=configuration-dns-record.xpkg \
-              ${{ env.REGISTRY }}/${{ env.PACKAGE_NAME }}:latest
+              --package-files=${{ needs.vars.outputs.name }}.xpkg \
+              ${{ env.PKG_PATH }}:latest
           fi
-      
-      - name: Generate package manifest for catalog
-        run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          
-          # Create a catalog entry file
-          cat > catalog-entry.yaml <<EOF
-          ---
-          # DNS Record Configuration Package
-          # Provides XRD and Composition for DNS record management
-          apiVersion: pkg.crossplane.io/v1
-          kind: Configuration
-          metadata:
-            name: configuration-dns-record
-            namespace: crossplane-system
-          spec:
-            package: ${{ env.REGISTRY }}/${{ env.PACKAGE_NAME }}:${VERSION}
 
-            # Package pull policy
-            # IfNotPresent: Only download if not in cache (recommended for production)
-            # Always: Check for updates on reconciliation (useful for development)
-            packagePullPolicy: IfNotPresent
+  update-catalog:
+    name: Update Catalog
+    needs: [vars, build]
+    # Only run for tag pushes, not manual dispatch
+    if: github.event_name == 'push'
+    uses: open-service-portal/catalog/.github/workflows/update-catalog-entry.yaml@main
+    with:
+      package-name: ${{ needs.vars.outputs.name }}
+      version: ${{ needs.vars.outputs.version }}
+      registry: ${{ needs.vars.outputs.registry }}
+      organisation: ${{ needs.vars.outputs.organisation }}
+    secrets: inherit
 
-            # Revision activation policy
-            # Automatic: New revisions become active immediately (good for single-tenant)
-            # Manual: Requires manual activation (safer for multi-tenant production)
-            revisionActivationPolicy: Automatic
+  create-release:
+    name: Create GitHub Release
+    needs: [vars, build, update-catalog]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
 
-            # Number of inactive revisions to keep
-            # Useful for rollback scenarios
-            revisionHistoryLimit: 3
+    permissions:
+      contents: write # For creating releases
 
-            # Skip dependency resolution
-            # Set to true if providers are pre-installed in the cluster
-            skipDependencyResolution: true
-          EOF
-          
-          echo "Generated catalog entry:"
-          cat catalog-entry.yaml
-      
-      - name: Upload catalog entry as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: catalog-entry-${{ steps.version.outputs.VERSION }}
-          path: catalog-entry.yaml
-          retention-days: 30
+    env:
+      VERSION: ${{ needs.vars.outputs.version }}
+      PKG_PATH: ${{ needs.vars.outputs.registry }}/${{ needs.vars.outputs.organisation }}/${{ needs.vars.outputs.name }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
       - name: Create GitHub Release
-        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          name: Configuration DNS Record ${{ steps.version.outputs.VERSION }}
+          name: Configuration DNS Record ${{ env.VERSION }}
           body: |
-            ## DNS Record Configuration Package ${{ steps.version.outputs.VERSION }}
+            ## DNS Record Configuration Package ${{ env.VERSION }}
             
             This release contains the Crossplane Configuration package for DNS record management.
             
-            ### Installation
+            ### 📦 Installation
             
             Install directly using kubectl:
             ```bash
@@ -162,91 +155,31 @@ jobs:
             apiVersion: pkg.crossplane.io/v1
             kind: Configuration
             metadata:
-              name: configuration-dns-record
+              name: ${{ needs.vars.outputs.name }}
               namespace: crossplane-system
             spec:
-              package: ${{ env.REGISTRY }}/${{ env.PACKAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+              package:  ${{ env.PKG_PATH }}:${{ env.VERSION }}
             EOF
             ```
             
             Or use the catalog entry from the artifacts.
             
-            ### Package Details
-            - Registry: `${{ env.REGISTRY }}/${{ env.PACKAGE_NAME }}`
-            - Version: `${{ steps.version.outputs.VERSION }}`
-            - Supports: Crossplane v2.0+
-            - Includes: XRD + Composition for DNS records
+            ### 📋 Package Details
+            - **Registry**: ` ${{ env.PKG_PATH }}`
+            - **Version**: `${{ env.VERSION }}`
+            - **Supports**: Crossplane v2.0+
+            - **Includes**: XRD + Composition for DNS records
             
-            ### What's Included
+            ### ✨ What's Included
             - Namespaced XRs for multi-tenant DNS management
             - Support for A, AAAA, CNAME, and TXT records
             - Mock provider for local development
-            - Cloudflare provider for production
-          files: |
-            configuration-dns-record.xpkg
-            catalog-entry.yaml
+            
+            ### 🔄 Catalog Update
+            The catalog has been automatically updated with this release.
+            - **Catalog PR**: ${{ needs.update-catalog.outputs.pr-url || 'Pending creation' }}
+            
+            ---
+            *This release was automatically created by the release workflow.*
           draft: false
-          prerelease: ${{ contains(steps.version.outputs.VERSION, '-') }}
-
-      # TODO: Wrap below steps into a custom action with necessary inputs and use it here
-
-      # Generate GitHub App token for catalog updates
-      # https://github.com/marketplace/actions/create-github-app-token
-      - name: Generate GitHub App Token
-        id: app-token
-        if: github.event_name == 'push'
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ vars.APP_CATALOG_CLIENT_ID }}
-          private-key: ${{ secrets.APP_CATALOG_PRIVATE_KEY }}
-          owner: open-service-portal
-          repositories: catalog
-
-      - name: Get GitHub App User ID
-        id: get-user-id
-        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-
-      - name: Checkout Catalog Repository
-        if: github.event_name == 'push'
-        uses: actions/checkout@v4
-        with:
-          repository: open-service-portal/catalog
-          token: ${{ steps.app-token.outputs.token }}
-          path: catalog
-
-      - name: Update Catalog Entry
-        if: github.event_name == 'push'
-        run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-
-          cp catalog-entry.yaml catalog/templates/template-dns-record.yaml
-          cd catalog
-          
-          # Configure git with app details
-          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
-          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
-          
-          git checkout -b update-dns-record-${VERSION}
-          git add templates/template-dns-record.yaml
-          git commit -m "chore: update DNS Record Configuration to ${VERSION}"
-          git push origin update-dns-record-${VERSION}
-
-      - name: Create Pull Request for Catalog Update
-        if: github.event_name == 'push'
-        run: |
-          VERSION="${{ steps.version.outputs.VERSION }}"
-          gh pr create \
-            --repo open-service-portal/catalog \
-            --title "Update DNS Record Configuration to ${VERSION}" \
-            --body "This PR updates the DNS Record Configuration package reference in the catalog.
-            
-            **Version**: ${VERSION}
-            **Package**: \`${{ env.REGISTRY }}/${{ env.PACKAGE_NAME }}:${VERSION}\`
-            
-            The catalog entry has been automatically generated from the release workflow." \
-            --base main \
-            --head update-dns-record-${VERSION}
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          prerelease: ${{ contains(needs.vars.outputs.version, '-') }}
