@@ -43,71 +43,19 @@ jobs:
 
   build:
     name: Build and Push Configuration Package
-    runs-on: ubuntu-latest
     needs: vars
-
+    uses: open-service-portal/.github/.github/workflows/build-crossplane-package.yaml@main
+    with:
+      package-name: ${{ needs.vars.outputs.name }}
+      version: ${{ needs.vars.outputs.version }}
+      registry: ${{ needs.vars.outputs.registry }}
+      organisation: ${{ needs.vars.outputs.organisation }}
     permissions:
-      packages: write # For pushing to GitHub Container Registry
+      contents: read
+      packages: write
+    secrets: inherit
 
-    env:
-      VERSION: ${{ needs.vars.outputs.version }}
-      PKG_PATH: ${{ needs.vars.outputs.registry }}/${{ needs.vars.outputs.organisation }}/${{ needs.vars.outputs.name }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          # Fetch all history for all tags and branches
-          fetch-depth: 0
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          # Enable multi-platform builds
-          platforms: linux/amd64,linux/arm64
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ needs.vars.outputs.registry }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install Crossplane CLI
-        run: |
-          # Install latest Crossplane CLI
-          curl -sL https://raw.githubusercontent.com/crossplane/crossplane/master/install.sh | sh
-          sudo mv crossplane /usr/local/bin/
-          # Ignore missing Crossplane server
-          crossplane version 2>/dev/null || true
-
-      - name: Build Configuration package
-        run: |
-          echo "Building version: ${VERSION}"
-
-          # Add version label to XRD only (crossplane.yaml has multi-line strings that yq corrupts)
-          yq -i '.metadata.labels."openportal.dev/version" = env(VERSION)' configuration/xrd.yaml
-
-          # Build the .xpkg file
-          crossplane xpkg build \
-            --package-root=configuration/ \
-            --package-file=${{ needs.vars.outputs.name }}.xpkg
-
-      - name: Push package to registry
-        run: |
-          # Push with version tag
-          crossplane xpkg push \
-            --package-files=${{ needs.vars.outputs.name }}.xpkg \
-            ${{ env.PKG_PATH }}:${VERSION}
-          
-          # Also push as 'latest' if this is not a pre-release
-          if [[ ! "${VERSION}" =~ - ]]; then
-            crossplane xpkg push \
-              --package-files=${{ needs.vars.outputs.name }}.xpkg \
-              ${{ env.PKG_PATH }}:latest
-          fi
-
-  update-catalog:
+  catalog:
     name: Update Catalog
     needs: [vars, build]
     # Only run for tag pushes, not manual dispatch
@@ -120,9 +68,9 @@ jobs:
       organisation: ${{ needs.vars.outputs.organisation }}
     secrets: inherit
 
-  create-release:
-    name: Create GitHub Release
-    needs: [vars, build, update-catalog]
+  release:
+    name: Create Release
+    needs: [vars, build, catalog]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
 
@@ -134,13 +82,10 @@ jobs:
       PKG_PATH: ${{ needs.vars.outputs.registry }}/${{ needs.vars.outputs.organisation }}/${{ needs.vars.outputs.name }}
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Configuration DNS Record ${{ env.VERSION }}
+          name: ${{ env.VERSION }}
           body: |
             ## DNS Record Configuration Package ${{ env.VERSION }}
             
@@ -176,7 +121,7 @@ jobs:
             
             ### 🔄 Catalog Update
             The catalog has been automatically updated with this release.
-            - **Catalog PR**: ${{ needs.update-catalog.outputs.pr-url || 'Pending creation' }}
+            - **Catalog PR**: ${{ needs.catalog.outputs.pr-url || 'Pending creation' }}
             
             ---
             *This release was automatically created by the release workflow.*
